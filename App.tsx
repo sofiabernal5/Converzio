@@ -5,126 +5,255 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect} from 'react';
 import {
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   useColorScheme,
   View,
+  SafeAreaView,
+  ScrollView,
+  Animated,
+  Dimensions,
+  TouchableOpacity,
 } from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
+import AnimatedBackground from './src/components/AnimatedBackground';
+import LinearGradient from 'react-native-linear-gradient';
+import VideoSelectionScreen from './src/screens/VideoSelectionScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import {TextStyles} from './src/constants/typography';
+import AboutModal from './src/components/AboutModal';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const {width} = Dimensions.get('window');
+const Stack = createNativeStackNavigator();
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
+function HomeScreen({navigation}: any): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  const highlightAnim = new Animated.Value(0);
+  const cardScale = new Animated.Value(1);
+  const buttonScale = new Animated.Value(1);
+  const [showAboutModal, setShowAboutModal] = React.useState(false);
+
+  useEffect(() => {
+    // Continuous highlight animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(highlightAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(highlightAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+
+    // Subtle breathing animation for the card
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(cardScale, {
+          toValue: 1.02,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardScale, {
+          toValue: 1,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, []);
+
+  const handlePressIn = () => {
+    Animated.spring(buttonScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(buttonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const highlightOpacity = highlightAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.8, 1],
+  });
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+      <AnimatedBackground />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}>
+        <Animated.View
+          style={[
+            styles.centerContent,
+            {
+              transform: [{scale: cardScale}],
+            },
+          ]}>
+            <View style={styles.contentWrapper}>
+              <Animated.Text
+                style={[
+                  styles.welcomeText,
+                  {
+                    opacity: highlightOpacity,
+                  },
+                ]}>
+                Welcome to Converzio
+              </Animated.Text>
+              <Text style={styles.sloganText}>
+                Digitize Your Professional Branding
+              </Text>
+              <View style={styles.separator} />
+              <TouchableOpacity
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={() => navigation.navigate('Login')}
+                style={styles.buttonContainer}>
+                <Animated.View
+                  style={[
+                    styles.buttonWrapper,
+                    {transform: [{scale: buttonScale}]},
+                  ]}>
+                  <LinearGradient
+                    colors={['#4a90e2', '#357abd']}
+                    start={{x: 0, y: 0}}
+                    end={{x: 1, y: 0}}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <Text style={styles.buttonText}>START NOW</Text>
+                </Animated.View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.infoButton}
+                onPress={() => setShowAboutModal(true)}>
+                <Text style={styles.infoButtonText}>
+                  What is Converzio?
+                </Text>
+              </TouchableOpacity>
+            </View>
+        </Animated.View>
+      </ScrollView>
+      <AboutModal 
+        visible={showAboutModal}
+        onClose={() => setShowAboutModal(false)}
+      />
+    </SafeAreaView>
   );
 }
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
-
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}>
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="VideoSelection" component={VideoSelectionScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  scrollView: {
+    flex: 1,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  contentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  highlight: {
-    fontWeight: '700',
+  centerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contentWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeText: {
+    ...TextStyles.heading1,
+    textAlign: 'center',
+    marginBottom: 10,
+    color: '#ffffff',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 3,
+  },
+  sloganText: {
+    ...TextStyles.slogan,
+    textAlign: 'center',
+    marginBottom: 30,
+    color: '#ffffff',
+    opacity: 0.9,
+  },
+  separator: {
+    height: 2,
+    width: 80,
+    backgroundColor: '#ffffff',
+    alignSelf: 'center',
+    marginBottom: 40,
+    borderRadius: 1,
+    opacity: 0.5,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+  },
+  buttonWrapper: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  buttonText: {
+    ...TextStyles.button,
+    color: '#fff',
+    textAlign: 'center',
+  },
+  infoButton: {
+    marginTop: 20,
+    padding: 8,
+  },
+  infoButtonText: {
+    ...TextStyles.caption,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+    color: '#ffffff',
+    opacity: 0.8,
   },
 });
 
